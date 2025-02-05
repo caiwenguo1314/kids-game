@@ -1,0 +1,71 @@
+:local(.maze) {
+  display: inline-block;
+  border: 2px solid #333;
+  padding: 4px;
+  background: #fff;
+  margin: 20px 0;
+}
+
+:local(.mazeRow) {
+  display: flex;
+}
+
+:local(.mazeCell) {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #eee;
+}
+
+:local(.wall) {
+  composes: mazeCell;
+  background-color: #333;
+}
+
+:local(.player) {
+  composes: mazeCell;
+  background-color: #1890ff;
+  border-radius: 50%;
+}
+
+:local(.end) {
+  composes: mazeCell;
+  background-color: #52c41a;
+}
+
+:local(.gameStats) {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+:local(.gameStats) p {
+  margin: 0;
+  font-size: 16px;
+}
+
+:local(.instructions) {
+  margin: 16px 0;
+  color: #666;
+}
+
+:local(.winMessage) {
+  text-align: center;
+  margin: 20px 0;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  :local(.mazeCell) {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* 超小屏幕适配 */
+@media (max-width: 320px) {
+  :local(.mazeCell) {
+    width: 15px;
+    height: 15px;
+  }
+}

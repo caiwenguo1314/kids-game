@@ -1,22 +1,40 @@
 import React, { useState, useEffect } from 'react';
+import { Button, Typography, Space, Card as AntCard } from 'antd';
+import { ReloadOutlined, HomeOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
-import Card from '../components/Card';
+import styles from './style.module.css';
+
+const { Title } = Typography;
 
 const emojis = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼'];
 const allEmojis = [...emojis, ...emojis];
-const PREVIEW_TIME = 5000; // 5 seconds in milliseconds
+const PREVIEW_TIME = 5000;
+
+interface GameCard {
+  id: number;
+  emoji: string;
+  isFlipped: boolean;
+  isMatched: boolean;
+}
 
 function MemoryGame() {
-  const [cards, setCards] = useState(shuffleCards());
+  const navigate = useNavigate();
+  const [cards, setCards] = useState<GameCard[]>(shuffleCards());
   const [flippedIndexes, setFlippedIndexes] = useState<number[]>([]);
   const [matchedPairs, setMatchedPairs] = useState<number[]>([]);
   const [moves, setMoves] = useState(0);
   const [isPreview, setIsPreview] = useState(true);
   const [gameStarted, setGameStarted] = useState(false);
 
-  function shuffleCards() {
+  function shuffleCards(): GameCard[] {
     return allEmojis
-      .map((emoji, index) => ({ id: index, emoji, isFlipped: false, isMatched: false }))
+      .map((emoji, index) => ({
+        id: index,
+        emoji,
+        isFlipped: false,
+        isMatched: false,
+      }))
       .sort(() => Math.random() - 0.5);
   }
 
@@ -24,12 +42,12 @@ function MemoryGame() {
     confetti({
       particleCount: 100,
       spread: 70,
-      origin: { x: 0.1, y: 0.6 }
+      origin: { x: 0.1, y: 0.6 },
     });
     confetti({
       particleCount: 100,
       spread: 70,
-      origin: { x: 0.9, y: 0.6 }
+      origin: { x: 0.9, y: 0.6 },
     });
   };
 
@@ -86,34 +104,53 @@ function MemoryGame() {
   };
 
   return (
-    <div className="memory-game">
-      <h1>记忆配对游戏</h1>
-      <p>移动次数: {moves}</p>
-      {!gameStarted ? (
-        <button className="game-button" onClick={startNewGame}>
-          开始游戏
-        </button>
-      ) : (
-        <button className="game-button" onClick={startNewGame}>
-          重新开始
-        </button>
-      )}
-      <div className="card-grid">
+    <Space direction="vertical" size="middle" style={{ width: '100%', padding: '16px 0' }} align="center">
+      <Title level={2} style={{ margin: 0 }}>记忆配对游戏</Title>
+      <Title level={4} style={{ margin: 0 }}>移动次数: {moves}</Title>
+      
+      <Button
+        type="primary"
+        icon={<ReloadOutlined />}
+        onClick={startNewGame}
+        size="large"
+      >
+        {!gameStarted ? '开始游戏' : '重新开始'}
+      </Button>
+
+      <div className={styles.cardGrid}>
         {cards.map((card, index) => (
-          <Card
+          <AntCard
             key={card.id}
-            emoji={card.emoji}
-            isFlipped={
+            className={`${styles.memoryCard} ${
               isPreview || flippedIndexes.includes(index) || matchedPairs.includes(index)
-            }
+                ? styles.flipped
+                : ''
+            } ${matchedPairs.includes(index) ? styles.matched : ''}`}
             onClick={() => handleCardClick(index)}
-          />
+          >
+            <div className={styles.cardContent}>
+              {isPreview || flippedIndexes.includes(index) || matchedPairs.includes(index)
+                ? card.emoji
+                : '❓'}
+            </div>
+          </AntCard>
         ))}
       </div>
+
       {matchedPairs.length === cards.length && matchedPairs.length > 0 && (
-        <h2 className="success-message">恭喜你完成了游戏！</h2>
+        <Title level={3} type="success">
+          恭喜你完成了游戏！
+        </Title>
       )}
-    </div>
+
+      <Button 
+        icon={<HomeOutlined />} 
+        onClick={() => navigate('/')}
+        size="large"
+      >
+        返回首页
+      </Button>
+    </Space>
   );
 }
 

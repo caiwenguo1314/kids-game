@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { Button, Typography, Space } from 'antd';
+import { HomeOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
+import styles from './style.module.css';
 
 // 迷宫生成器
 class MazeGenerator {
@@ -139,6 +143,7 @@ class MazeGenerator {
 }
 
 function MazeGame() {
+  const navigate = useNavigate();
   const mazeSize = 17;
   const [maze, setMaze] = useState<number[][]>([]);
   const [playerPosition, setPlayerPosition] = useState({ x: 1, y: 1 });
@@ -224,49 +229,64 @@ function MazeGame() {
 
   const getCellClassName = (cell: number, rowIndex: number, colIndex: number) => {
     if (rowIndex === playerPosition.y && colIndex === playerPosition.x) {
-      return 'maze-cell player';
+      return styles.player;
     }
     switch (cell) {
       case 1:
-        return 'maze-cell wall';
+        return styles.wall;
       case 2:
-        return 'maze-cell start';
+        return styles.start;
       case 3:
-        return 'maze-cell end';
+        return styles.end;
       default:
-        return 'maze-cell';
+        return '';
     }
   };
 
   return (
-    <div className="maze-game">
-      <h1>迷宫游戏</h1>
-      <div className="game-stats">
+    <Space direction="vertical" size="middle" style={{ width: '100%', padding: '16px 0' }} align="center">
+      <Typography.Title level={2} style={{ margin: 0 }}>迷宫游戏</Typography.Title>
+      
+      <div className={styles.gameStats}>
         <p>移动次数: {moves}</p>
         <p>时间: {formatTime(time)}</p>
       </div>
-      <button className="game-button" onClick={generateNewMaze}>
+
+      <Button 
+        type="primary"
+        onClick={generateNewMaze}
+        size="large"
+      >
         重新开始
-      </button>
-      <p className="instructions">使用键盘方向键移动</p>
-      <div className="maze-container">
-        {maze.map((row, rowIndex) =>
-          row.map((cell, colIndex) => (
-            <div
-              key={`${rowIndex}-${colIndex}`}
-              className={getCellClassName(cell, rowIndex, colIndex)}
-            />
-          ))
-        )}
+      </Button>
+      <p className={styles.instructions}>使用键盘方向键移动</p>
+      <div className={styles.maze}>
+        {maze.map((row, y) => (
+          <div key={y} className={styles.mazeRow}>
+            {row.map((cell, x) => (
+              <div
+                key={`${x}-${y}`}
+                className={getCellClassName(cell, y, x)}
+              />
+            ))}
+          </div>
+        ))}
       </div>
       {gameWon && (
-        <div className="success-message">
+        <div className={styles.successMessage}>
           <h2>恭喜你完成了迷宫！</h2>
           <p>总用时: {formatTime(time)}</p>
           <p>移动次数: {moves}</p>
         </div>
       )}
-    </div>
+      <Button 
+        icon={<HomeOutlined />} 
+        onClick={() => navigate('/')}
+        size="large"
+      >
+        返回首页
+      </Button>
+    </Space>
   );
 }
 

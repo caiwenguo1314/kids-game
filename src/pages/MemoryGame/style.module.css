@@ -1,0 +1,105 @@
+.memory-game {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  width: 100%;
+  max-width: 600px;
+  margin: 16px auto;
+  padding: 0 16px;
+}
+
+.memoryCard {
+  aspect-ratio: 1;
+  cursor: pointer;
+}
+
+.memoryCard.ant-card {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.memoryCard.ant-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.memoryCard :global(.ant-card-body) {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 !important;
+}
+
+.cardContent {
+  font-size: 2rem;
+  width: 2.5em;
+  height: 2.5em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s ease;
+}
+
+.memoryCard.matched {
+  opacity: 0.6;
+}
+
+.game-button {
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  margin: 15px 0;
+  transition: background-color 0.3s ease;
+}
+
+.game-button:hover {
+  background-color: #0056b3;
+}
+
+.success-message {
+  color: #28a745;
+  margin-top: 20px;
+  font-size: 20px;
+}
+
+h1 {
+  font-size: 2rem;
+  margin: 15px 0;
+  color: #333;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .cardGrid {
+    gap: 8px;
+    padding: 0 8px;
+  }
+
+  .cardContent {
+    font-size: 1.5rem;
+  }
+}
+
+/* 超小屏幕适配 */
+@media (max-width: 320px) {
+  .cardGrid {
+    gap: 6px;
+    padding: 0 6px;
+  }
+
+  .cardContent {
+    font-size: 1.2rem;
+  }
+}

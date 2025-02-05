@@ -1,0 +1,18 @@
+* text=auto eol=crlf
+
+*.{cmd,[cC][mM][dD]} text eol=crlf
+*.{bat,[bB][aA][tT]} text eol=crlf
+
+*.{css,[cC][sS][sS]} text eol=crlf
+*.{js,[jJ][sS]} text eol=crlf
+*.{jsx,[jJ][sS][xX]} text eol=crlf
+*.{ts,[tT][sS]} text eol=crlf
+*.{tsx,[tT][sS][xX]} text eol=crlf
+*.{json,[jJ][sS][oO][nN]} text eol=crlf
+*.{html,[hH][tT][mM][lL]} text eol=crlf
+
+*.{png,[pP][nN][gG]} binary
+*.{jpg,[jJ][pP][gG],[jpeg],[jJ][pP][eE][gG]} binary
+*.{gif,[gG][iI][fF]} binary
+*.{ico,[iI][cC][oO]} binary
+*.{svg,[sS][vV][gG]} binary
