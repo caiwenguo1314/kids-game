@@ -1,19 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Typography, Space } from 'antd';
-import { HomeOutlined } from '@ant-design/icons';
+import { Button, Typography, Space, Switch } from 'antd';
+import { HomeOutlined, EyeOutlined, EyeInvisibleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 import styles from './style.module.css';
 
-// 迷宫生成器
 class MazeGenerator {
   private maze: number[][];
   private size: number;
   private directions = [
-    [-2, 0],  // 上
-    [2, 0],   // 下
-    [0, -2],  // 左
-    [0, 2]    // 右
+    [-1, 0],  // 上
+    [1, 0],   // 下
+    [0, -1],  // 左
+    [0, 1]    // 右
   ];
 
   constructor(size: number) {
@@ -30,21 +29,49 @@ class MazeGenerator {
   }
 
   private isValid(x: number, y: number): boolean {
-    return x > 0 && x < this.size - 1 && y > 0 && y < this.size - 1;
+    return x >= 0 && x < this.size && y >= 0 && y < this.size;
   }
 
-  private carve(x: number, y: number) {
-    this.maze[y][x] = 0;
+  private generateMaze() {
+    // 初始化迷宫，所有格子都是墙
+    for (let y = 0; y < this.size; y++) {
+      for (let x = 0; x < this.size; x++) {
+        this.maze[y][x] = 1;
+      }
+    }
+
+    // 从中心点开始生成
+    const startX = Math.floor(this.size / 2);
+    const startY = Math.floor(this.size / 2);
+    this.maze[startY][startX] = 0;
+
+    // 存储待访问的点
+    const stack = [{x: startX, y: startY}];
     
-    let directions = this.shuffleArray([...this.directions]);
-    
-    for (let [dy, dx] of directions) {
-      let newY = y + dy;
-      let newX = x + dx;
+    while (stack.length > 0) {
+      const current = stack[stack.length - 1];
       
-      if (this.isValid(newX, newY) && this.maze[newY][newX] === 1) {
-        this.maze[y + dy/2][x + dx/2] = 0;
-        this.carve(newX, newY);
+      // 获取可访问的相邻格子
+      const neighbors = [];
+      for (const [dy, dx] of this.directions) {
+        const newY = current.y + dy * 2;
+        const newX = current.x + dx * 2;
+        
+        if (this.isValid(newX, newY) && this.maze[newY][newX] === 1) {
+          neighbors.push({x: newX, y: newY, dx, dy});
+        }
+      }
+      
+      if (neighbors.length > 0) {
+        // 随机选择一个相邻格子
+        const next = neighbors[Math.floor(Math.random() * neighbors.length)];
+        // 打通墙壁
+        this.maze[current.y + next.dy][current.x + next.dx] = 0;
+        this.maze[next.y][next.x] = 0;
+        stack.push({x: next.x, y: next.y});
+      } else {
+        // 没有可访问的相邻格子，回溯
+        stack.pop();
       }
     }
   }
@@ -52,18 +79,20 @@ class MazeGenerator {
   // 获取所有可能的起点或终点位置
   private getValidEndpoints(): {x: number, y: number}[] {
     const points: {x: number, y: number}[] = [];
-    for (let y = 1; y < this.size - 1; y++) {
-      for (let x = 1; x < this.size - 1; x++) {
+    for (let y = 0; y < this.size; y++) {
+      for (let x = 0; x < this.size; x++) {
         if (this.maze[y][x] === 0) {
-          // 检查周围是否有足够的空间
-          let emptyNeighbors = 0;
-          for (let [dy, dx] of [[-1,0], [1,0], [0,-1], [0,1]]) {
-            if (this.maze[y+dy][x+dx] === 0) {
-              emptyNeighbors++;
+          // 检查周围的墙的数量
+          let wallCount = 0;
+          for (const [dy, dx] of this.directions) {
+            const newY = y + dy;
+            const newX = x + dx;
+            if (!this.isValid(newX, newY) || this.maze[newY][newX] === 1) {
+              wallCount++;
             }
           }
-          // 只选择有多个出口的点作为可能的起点或终点
-          if (emptyNeighbors >= 2) {
+          // 如果三面是墙，一面是路，则是死胡同
+          if (wallCount === 3) {
             points.push({x, y});
           }
         }
@@ -72,35 +101,33 @@ class MazeGenerator {
     return points;
   }
 
-  // 检查两点之间是否有路径
-  private hasPath(start: {x: number, y: number}, end: {x: number, y: number}): boolean {
-    const visited = Array(this.size).fill(0).map(() => Array(this.size).fill(false));
+  // 检查两点之间是否有路径，并返回路径长度
+  private findPath(start: {x: number, y: number}, end: {x: number, y: number}): number {
+    const visited = Array(this.size).fill(0).map(() => Array(this.size).fill(-1));
     const queue = [start];
-    visited[start.y][start.x] = true;
+    visited[start.y][start.x] = 0;
 
     while (queue.length > 0) {
       const current = queue.shift()!;
       if (current.x === end.x && current.y === end.y) {
-        return true;
+        return visited[current.y][current.x];
       }
 
-      for (let [dy, dx] of [[-1,0], [1,0], [0,-1], [0,1]]) {
+      for (const [dy, dx] of this.directions) {
         const newY = current.y + dy;
         const newX = current.x + dx;
-        if (this.isValid(newX, newY) && !visited[newY][newX] && this.maze[newY][newX] !== 1) {
+        if (this.isValid(newX, newY) && visited[newY][newX] === -1 && this.maze[newY][newX] !== 1) {
           queue.push({x: newX, y: newY});
-          visited[newY][newX] = true;
+          visited[newY][newX] = visited[current.y][current.x] + 1;
         }
       }
     }
-    return false;
+    return -1;
   }
 
   generate(): {maze: number[][], start: {x: number, y: number}, end: {x: number, y: number}} {
-    // 从随机点开始生成迷宫
-    const startGenX = 1 + 2 * Math.floor(Math.random() * ((this.size-1)/2));
-    const startGenY = 1 + 2 * Math.floor(Math.random() * ((this.size-1)/2));
-    this.carve(startGenX, startGenY);
+    // 生成迷宫
+    this.generateMaze();
 
     // 获取所有可能的端点
     const possiblePoints = this.shuffleArray(this.getValidEndpoints());
@@ -112,18 +139,18 @@ class MazeGenerator {
     }
 
     // 选择距离较远的两个点作为起点和终点
-    let maxDistance = 0;
+    let maxPathLength = 0;
     let start = possiblePoints[0];
     let end = possiblePoints[1];
 
-    for (let i = 0; i < possiblePoints.length; i++) {
-      for (let j = i + 1; j < possiblePoints.length; j++) {
+    for (let i = 0; i < Math.min(possiblePoints.length, 10); i++) {
+      for (let j = i + 1; j < Math.min(possiblePoints.length, 10); j++) {
         const p1 = possiblePoints[i];
         const p2 = possiblePoints[j];
-        const distance = Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y);
+        const pathLength = this.findPath(p1, p2);
         
-        if (distance > maxDistance && this.hasPath(p1, p2)) {
-          maxDistance = distance;
+        if (pathLength > maxPathLength) {
+          maxPathLength = pathLength;
           start = p1;
           end = p2;
         }
@@ -144,13 +171,20 @@ class MazeGenerator {
 
 function MazeGame() {
   const navigate = useNavigate();
-  const mazeSize = 17;
+  const mazeSize = 15;
   const [maze, setMaze] = useState<number[][]>([]);
   const [playerPosition, setPlayerPosition] = useState({ x: 1, y: 1 });
   const [gameWon, setGameWon] = useState(false);
   const [moves, setMoves] = useState(0);
   const [time, setTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [fogEnabled, setFogEnabled] = useState(true);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const generateNewMaze = () => {
     const generator = new MazeGenerator(mazeSize);
@@ -177,6 +211,39 @@ function MazeGame() {
     return () => clearInterval(timer);
   }, [isPlaying, gameWon]);
 
+  // 检查移动是否有效
+  const isValidMove = (current: {x: number, y: number}, next: {x: number, y: number}): boolean => {
+    // 检查是否是相邻格子
+    const dx = Math.abs(next.x - current.x);
+    const dy = Math.abs(next.y - current.y);
+    if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
+      // 检查目标格子是否可通行
+      return maze[next.y][next.x] !== 1;
+    }
+    return false;
+  };
+
+  // 检查一个格子是否在玩家的可见范围内
+  const isVisible = (cellX: number, cellY: number): 'visible' | '' => {
+    if (!fogEnabled) return 'visible';
+    
+    // 如果是终点，始终可见
+    if (maze[cellY][cellX] === 3) {
+      return 'visible';
+    }
+    
+    // 计算与玩家的曼哈顿距离
+    const dx = Math.abs(cellX - playerPosition.x);
+    const dy = Math.abs(cellY - playerPosition.y);
+    
+    // 5x5 的区域，即上下左右各2格
+    if (dx <= 2 && dy <= 2) {
+      return 'visible';
+    }
+    
+    return '';
+  };
+
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (gameWon || maze.length === 0) return;
@@ -200,7 +267,7 @@ function MazeGame() {
           return;
       }
 
-      if (maze[newPosition.y][newPosition.x] !== 1) {
+      if (isValidMove(playerPosition, newPosition)) {
         setIsPlaying(true);
         setPlayerPosition(newPosition);
         setMoves(prev => prev + 1);
@@ -221,26 +288,32 @@ function MazeGame() {
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [playerPosition, gameWon, maze]);
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
   const getCellClassName = (cell: number, rowIndex: number, colIndex: number) => {
-    if (rowIndex === playerPosition.y && colIndex === playerPosition.x) {
-      return styles.player;
+    const baseClassName = (() => {
+      if (rowIndex === playerPosition.y && colIndex === playerPosition.x) {
+        return styles.player;
+      }
+      switch (cell) {
+        case 1:
+          return styles.wall;
+        case 2:
+          return styles.mazeCell;
+        case 3:
+          return styles.end;
+        default:
+          return styles.mazeCell;
+      }
+    })();
+
+    // 如果迷雾模式开启，只显示玩家周围的区域
+    if (fogEnabled) {
+      const visibility = isVisible(colIndex, rowIndex);
+      if (visibility === '') {
+        return styles.wall; // 未探索区域显示为墙
+      }
     }
-    switch (cell) {
-      case 1:
-        return styles.wall;
-      case 2:
-        return styles.start;
-      case 3:
-        return styles.end;
-      default:
-        return '';
-    }
+
+    return baseClassName;
   };
 
   return (
@@ -252,28 +325,47 @@ function MazeGame() {
         <p>时间: {formatTime(time)}</p>
       </div>
 
-      <Button 
-        type="primary"
-        onClick={generateNewMaze}
-        size="large"
-      >
-        重新开始
-      </Button>
+      <div className={styles.controls}>
+        <Button 
+          type="primary"
+          onClick={generateNewMaze}
+          size="large"
+        >
+          重新开始
+        </Button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Switch
+            checked={fogEnabled}
+            onChange={setFogEnabled}
+            checkedChildren={<EyeInvisibleOutlined />}
+            unCheckedChildren={<EyeOutlined />}
+          />
+          <span>迷雾模式</span>
+        </div>
+      </div>
+
       <p className={styles.instructions}>使用键盘方向键移动</p>
       <div className={styles.maze}>
         {maze.map((row, y) => (
           <div key={y} className={styles.mazeRow}>
-            {row.map((cell, x) => (
-              <div
-                key={`${x}-${y}`}
-                className={getCellClassName(cell, y, x)}
-              />
-            ))}
+            {row.map((cell, x) => {
+              const visibility = isVisible(x, y);
+              return (
+                <div
+                  key={`${x}-${y}`}
+                  className={getCellClassName(cell, y, x)}
+                >
+                  {fogEnabled && visibility !== 'visible' && (
+                    <div className={styles.fogCell} />
+                  )}
+                </div>
+              );
+            })}
           </div>
         ))}
       </div>
       {gameWon && (
-        <div className={styles.successMessage}>
+        <div className={styles.winMessage}>
           <h2>恭喜你完成了迷宫！</h2>
           <p>总用时: {formatTime(time)}</p>
           <p>移动次数: {moves}</p>

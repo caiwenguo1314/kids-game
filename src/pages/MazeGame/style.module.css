@@ -2,8 +2,9 @@
   display: inline-block;
   border: 2px solid #333;
   padding: 4px;
-  background: #fff;
+  background: #333;
   margin: 20px 0;
+  position: relative;
 }
 
 :local(.mazeRow) {
@@ -13,23 +14,45 @@
 :local(.mazeCell) {
   width: 30px;
   height: 30px;
-  border: 1px solid #eee;
+  border: 1px solid #444;
+  position: relative;
+  background-color: #fff;
 }
 
 :local(.wall) {
   composes: mazeCell;
-  background-color: #333;
+  background-color: #666;
+  border-color: #555;
 }
 
 :local(.player) {
   composes: mazeCell;
   background-color: #1890ff;
   border-radius: 50%;
+  z-index: 2;
 }
 
 :local(.end) {
   composes: mazeCell;
   background-color: #52c41a;
+}
+
+:local(.fogCell) {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #000;
+  z-index: 1;
+}
+
+:local(.visible) {
+  display: none;
+}
+
+:local(.dimmed) {
+  background-color: #000;
 }
 
 :local(.gameStats) {
@@ -42,6 +65,12 @@
 :local(.gameStats) p {
   margin: 0;
   font-size: 16px;
+}
+
+:local(.controls) {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
 :local(.instructions) {
